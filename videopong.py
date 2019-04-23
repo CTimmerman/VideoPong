@@ -8,7 +8,7 @@ Press C to capture a screenshot; Esc to exit.
 """
 from __future__ import print_function
 import time
-import cv2  # python2 -m pip install opencv-python
+import cv2  # python -m pip install opencv-python
 from camera import Camera
 from FPS import FPS
 
