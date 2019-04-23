@@ -27,6 +27,7 @@ ball_color = random_color()
 r = 20
 x, y = 100, 100
 dx, dy = 1, 1
+tolerance = 40
 window_title = 'Video Pong'
 
 countdown = 0
@@ -55,7 +56,7 @@ while True:
 	fps.update()
 	
 	if old_img is not None and img is not None:
-		diff = cv2.absdiff(old_img, img) > 50
+		diff = cv2.absdiff(old_img, img) > tolerance
 
 	# Handle ball.
 	x += dx; y += dy

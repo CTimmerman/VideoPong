@@ -1,0 +1,6 @@
+keras
+matplotlib
+opencv-python
+pillow
+tensorflow
+https://github.com/OlafenwaMoses/ImageAI/releases/download/2.0.2/imageai-2.0.2-py3-none-any.whl
