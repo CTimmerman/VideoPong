@@ -5,12 +5,15 @@ Press C to capture a screenshot; Esc to exit.
 
 2019-03-25 v0.1 based on https://theailearner.com/2019/03/18/set-camera-timer-using-opencv-python/
 2019-03-25 v0.2 Ball bounces off video changes.
+2019-04-24 v0.3 Mirror by default and PEP 8 a bit.
 """
 from __future__ import print_function
 import time
+
 import cv2  # python -m pip install opencv-python
+
 from camera import Camera
-from FPS import FPS
+from fps import FPS
 
 def random_color():
 	from random import randint as rnd
@@ -27,14 +30,15 @@ ball_color = random_color()
 r = 20
 x, y = 100, 100
 dx, dy = 1, 1
-tolerance = 40
+tolerance = 18
 window_title = 'Video Pong'
+flip = 1
 
 countdown = 0
 
 #cap = cv2.VideoCapture(0)  # read() blocks.
 #cap.stop = cap.release
-cap = Camera().start()  # Nonblocking read()
+cap = Camera(flip=1).start()  # Nonblocking read()
 #TODO: bg1 = cv2.BackgroundSubtractorMOG2(history=3, nmixtures=5, backgroundRatio=0.0001)
 
 fps = FPS()
@@ -81,16 +85,15 @@ while True:
 			print(msg)
 			cv2.waitKey(600)
 		else:
-			if countdown >= 10:
-				write(img, str(countdown//10), 250, 250, 7, thickness=3)
-				cv2.imshow(window_title, img)
-			cv2.waitKey(100)
+			write(img, str(int(countdown//fps.fps()) + 1), 250, 250, 7, thickness=3)
+			cv2.imshow(window_title, img)
+			#cv2.waitKey(100)
 
 	cv2.imshow(window_title, img)
 	
 	# Handle user input for 1 ms.
 	k = cv2.waitKey(1) # Add & 0xFF for 64-bit Windows perhaps.
-	if k == ord('c'): countdown = 40
+	if k == ord('c'): countdown = int(3 * fps.fps())
 	elif k == 27: break  # Press Esc to exit
 
 cap.stop()
