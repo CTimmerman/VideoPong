@@ -6,6 +6,7 @@ Press C to capture a screenshot; Esc to exit.
 2019-03-25 v0.1 based on https://theailearner.com/2019/03/18/set-camera-timer-using-opencv-python/
 2019-03-25 v0.2 Ball bounces off video changes.
 2019-04-24 v0.3 Mirror by default and PEP 8 a bit.
+2019-04-30 v0.3.1 Fixed mirror feature.
 """
 from __future__ import print_function
 import time
@@ -14,6 +15,7 @@ import cv2  # python -m pip install opencv-python
 
 from camera import Camera
 from fps import FPS
+
 
 def random_color():
 	from random import randint as rnd
@@ -32,18 +34,14 @@ x, y = 100, 100
 dx, dy = 1, 1
 tolerance = 18
 window_title = 'Video Pong'
-flip = 1
-
-countdown = 0
 
 #cap = cv2.VideoCapture(0)  # read() blocks.
 #cap.stop = cap.release
-cap = Camera(flip=1).start()  # Nonblocking read()
+cap = Camera(mirror=True).start()  # Nonblocking read()
 #TODO: bg1 = cv2.BackgroundSubtractorMOG2(history=3, nmixtures=5, backgroundRatio=0.0001)
 
-fps = FPS()
-fps.start()
-
+fps = FPS(); fps.start()
+countdown = 0
 img = new_img = diff = None
 while True:
 	old_img = new_img  # Use raw feed without overlay.

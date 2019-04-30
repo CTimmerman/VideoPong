@@ -3,11 +3,11 @@ from threading import Thread
 import cv2
 
 class Camera:
-	def __init__(self, src=0, flip=0):
-		self.flip = flip
+	def __init__(self, src=0, mirror=False):
+		self.mirror = mirror
 		self.stream = cv2.VideoCapture(src)
 		self.grabbed, frame = self.stream.read()
-		self.frame = cv2.flip(frame, self.flip)
+		self.frame = cv2.flip(frame, 1) if self.mirror else frame
 		self.stopped = False
 
 	def start(self):
@@ -20,7 +20,7 @@ class Camera:
 		while True:
 			if self.stopped: return
 			self.grabbed, frame = self.stream.read()
-			self.frame = cv2.flip(frame, self.flip)
+			self.frame = cv2.flip(frame, 1) if self.mirror else frame
 
 	def read(self):
 		return self.grabbed, self.frame
