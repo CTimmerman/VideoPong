@@ -8,7 +8,11 @@ class Camera:
 		self.stream = cv2.VideoCapture(src)
 		self.grabbed, frame = self.stream.read()
 		self.frame = cv2.flip(frame, 1) if self.mirror else frame
+		self.frame_width = int(self.stream.get(cv2.CAP_PROP_FRAME_WIDTH))
+		self.frame_height = int(self.stream.get(cv2.CAP_PROP_FRAME_HEIGHT))
+		self.video = None
 		self.stopped = False
+		self.frame_count = 0  #cap.stream.get(cv2.CAP_PROP_FRAME_COUNT) is always 0! https://github.com/opencv/opencv/issues/12091
 
 	def start(self):
 		Thread(target=self.update, args=()).start()
@@ -21,9 +25,21 @@ class Camera:
 			if self.stopped: return
 			self.grabbed, frame = self.stream.read()
 			self.frame = cv2.flip(frame, 1) if self.mirror else frame
+			if self.video:
+				self.video.write(self.frame)
+			self.frame_count += 1
 
 	def read(self):
 		return self.grabbed, self.frame
 
+	def record(self, filename='capture.avi', fourcc='XVID'):
+		self.video = cv2.VideoWriter(filename, cv2.VideoWriter_fourcc(*fourcc), 25, (self.frame_width, self.frame_height))
+
+	def record_stop(self):
+		if self.video:
+			self.video.release()
+			self.video = None
+
 	def stop(self):
 		self.stopped = True
+		self.record_stop()
