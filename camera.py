@@ -10,6 +10,7 @@ class Camera:
 		self.frame = cv2.flip(frame, 1) if self.mirror else frame
 		self.frame_width = int(self.stream.get(cv2.CAP_PROP_FRAME_WIDTH))
 		self.frame_height = int(self.stream.get(cv2.CAP_PROP_FRAME_HEIGHT))
+		self.fps = self.stream.get(cv2.CAP_PROP_FPS)
 		self.video = None
 		self.stopped = False
 		self.frame_count = 0  #cap.stream.get(cv2.CAP_PROP_FRAME_COUNT) is always 0! https://github.com/opencv/opencv/issues/12091

@@ -102,7 +102,7 @@ while True:
 			write(img, "Recording to %s." % path, window_title=window_title)
 			cv2.waitKey(600)
 			#cap.record(path)  # Lacks our overlay.
-			video = cv2.VideoWriter(path, cv2.VideoWriter_fourcc(*'XVID'), 25, (cap.frame_width, cap.frame_height))
+			video = cv2.VideoWriter(path, cv2.VideoWriter_fourcc(*'XVID'), cap.fps, (cap.frame_width, cap.frame_height))
 	elif k == 27:  # Esc
 		break
 	
