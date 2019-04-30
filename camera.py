@@ -8,8 +8,8 @@ class Camera:
 		self.stream = cv2.VideoCapture(src)
 		self.grabbed, frame = self.stream.read()
 		self.frame = cv2.flip(frame, 1) if self.mirror else frame
-		self.frame_width = int(self.stream.get(cv2.CAP_PROP_FRAME_WIDTH))
-		self.frame_height = int(self.stream.get(cv2.CAP_PROP_FRAME_HEIGHT))
+		self.width = int(self.stream.get(cv2.CAP_PROP_FRAME_WIDTH))
+		self.height = int(self.stream.get(cv2.CAP_PROP_FRAME_HEIGHT))
 		self.fps = self.stream.get(cv2.CAP_PROP_FPS)
 		self.video = None
 		self.stopped = False
@@ -34,7 +34,7 @@ class Camera:
 		return self.grabbed, self.frame
 
 	def record(self, filename='capture.avi', fourcc='XVID'):
-		self.video = cv2.VideoWriter(filename, cv2.VideoWriter_fourcc(*fourcc), 25, (self.frame_width, self.frame_height))
+		self.video = cv2.VideoWriter(filename, cv2.VideoWriter_fourcc(*fourcc), 25, (self.width, self.height))
 
 	def record_stop(self):
 		if self.video:
