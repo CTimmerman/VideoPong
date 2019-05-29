@@ -1,17 +1,20 @@
 # -*- coding: utf-8 -*-
 """Video Pong by Cees Timmerman
 
-Press C to capture a screenshot, V to record, and Esc to exit.
+Press C to capture screenshot, V to toggle record,
+Esc to exit, and +/- to adjust ball tolerance.
 
 2019-03-25 v0.1 based on https://theailearner.com/2019/03/18/set-camera-timer-using-opencv-python/
 2019-03-26 v0.2 Ball bounces off video changes.
 2019-04-24 v0.3 Mirror by default and PEP 8 a bit.
 2019-04-30 v0.4 Fixed mirror feature, added video recording, more uniform and efficient speed, record indicator.
+2019-05-30 v0.5 Toggle recording, adjust tolerance, tweak FPS, obey window close, support webcam hotswap.
 """
 from __future__ import print_function
 import time
 
 import cv2  # python -m pip install opencv-python
+import numpy as np
 
 from camera import Camera
 from fps import FPS
@@ -24,21 +27,11 @@ def random_color():
 	from random import randint as rnd
 	return (rnd(0, 255), rnd(0, 255), rnd(0, 255))
 
-def write(img, msg, x=2, y=12, size=0.5, color=WHITE, thickness=1, window_title=''):
+def write(img, msg, x=2, y=13, size=0.5, color=WHITE, thickness=1, window_title=''):
 	font = cv2.FONT_HERSHEY_SIMPLEX
-	cv2.putText(img, msg, (x+thickness, y+thickness), font, size, BLACK, thickness, cv2.LINE_AA)  # Drop shadow for contrast.
-	cv2.putText(img, msg, (x, y), font, size, color, thickness, cv2.LINE_AA)
+	cv2.putText(img, str(msg), (x+thickness, y+thickness), font, size, BLACK, thickness, cv2.LINE_AA)  # Drop shadow for contrast.
+	cv2.putText(img, str(msg), (x, y), font, size, color, thickness, cv2.LINE_AA)
 	if window_title: cv2.imshow(window_title, img)
-
-print(__doc__)
-
-#cap = cv2.VideoCapture(0)  # read() blocks.
-#cap.stop = cap.release
-cap = Camera(mirror=True).start()  # Nonblocking read()
-#TODO: bg1 = cv2.BackgroundSubtractorMOG2(history=3, nmixtures=5, backgroundRatio=0.0001)
-
-fps = FPS()
-fps.limit = 60
 
 captions = []
 def caption(write_args, duration=1):
@@ -47,11 +40,18 @@ def caption(write_args, duration=1):
 	captions.append([frames, *write_args])
 	print(write_args[0])
 
+print(__doc__)
+
+fps = FPS(60)
+cap = Camera(mirror=True).start()
+#TODO: bg1 = cv2.BackgroundSubtractorMOG2(history=3, nmixtures=5, backgroundRatio=0.0001)
+w = cap.width or 640
+h = cap.height or 480
 ball_color = random_color()
 r = 20
-x, y = cap.width//2 - r//2, cap.height//2 - r//2
-
-dx = dy = cap.width // fps.limit // 2  # Ball crosses screen in about 2 seconds.
+x = w//2 - r//2
+y = h//2 - r//2
+dx = dy = w // fps.limit // 2  # Ball crosses screen in about 2 seconds.
 
 tolerance = 20
 window_title = 'Video Pong'
@@ -61,14 +61,15 @@ fps.start()
 while True:
 	old_img = new_img  # Use raw feed without overlay.
 	ok, new_img = cap.read()
-	if ok:
+	if new_img is not None:
 		img = new_img.copy()  # No motion blur.
 		#fg1 = bg1.apply(img)
 		#cv2.imshow('BG', fg1)
 		#cv2.BackgroundSubtractor.apply(img)
 	else:
-		print("Can't get image.")
-		cap.stop()
+		#print("Can't get image.")
+		#cap.stop()
+		img = new_img = np.zeros((480, 640, 3), np.uint8)
 	
 	fps.update()
 	
@@ -85,6 +86,7 @@ while True:
 	
 	write(img, "{:.2f} FPS".format(fps.fps()), 20, 30)
 
+	# Handle capture.
 	if countdown > 0:
 		countdown -= 1
 		if countdown == 0:
@@ -99,35 +101,47 @@ while True:
 	
 	# Handle user input for 1 ms.
 	k = cv2.waitKey(1) # Add & 0xFF for 64-bit Windows perhaps.
-	if k == ord('c'):
+	if k == ord('+'):
+		tolerance += 1
+		caption(["Tolerance: %s" % tolerance], 1)
+	elif k == ord('-'):
+		tolerance -= 1
+		caption(["Tolerance: %s" % tolerance], 1)
+	elif k == ord('c'):  # capture
 		countdown = int(3 * fps.fps())
-	elif k == ord('h'):
+	elif k == ord('e'):  # capture
+		caption([fps.elapsed()])
+	elif k == ord('h'):  # help
 		for i, line in enumerate(__doc__.splitlines()):
 			caption([line, 2, 55+i*14], 5)
-	elif k == ord('v'):
+	elif k == ord('v'):  # video
 		if video:
-			caption(["Already recording."])
-			#print(video.getBackendName())
+			video.release()
+			video = None
 		else:
 			path = 'cam' + time.strftime("%Y-%m-%d %H.%M.%S") + '.avi'
-			caption(["Recording to %s." % path])
+			caption(["Recording to %s @ %s FPS." % (path, fps.limit)])
 			#cap.record(path)  # Lacks our overlay.
-			video = cv2.VideoWriter(path, cv2.VideoWriter_fourcc(*'XVID'), cap.fps, (cap.width, cap.height))
+			video = cv2.VideoWriter(path, cv2.VideoWriter_fourcc(*'XVID'), fps.limit, (w, h))
 	elif k == 27:  # Esc
 		break
-		
+	elif old_img is not None and cv2.getWindowProperty(window_title, 0) < 0:
+		break
+	
+	# Render text.
 	for i, arr in enumerate(captions.copy()):
 		arr[0] -= 1
 		if arr[0] <= 0: captions.remove(arr)
 		write(img, *arr[1:])
-
 	if video:
-		write(img, "R", x=cap.width-60, y=60, color=RED, thickness=4, size=2)
+		write(img, "R", x=w-60, y=60, color=RED, thickness=4, size=2)  # "•" would require pillow module.
+	
+	# Show frame.
 	cv2.imshow(window_title, img)
-
+	
 	# Record including overlay.
 	if video:
-		# The writer limits its own frames.
+		# The writer limits its own frames... or not.
 		#frame_count = cap.frame_count
 		#if (frame_count > old_frame_count) and video:
 		#	old_frame_count = frame_count
