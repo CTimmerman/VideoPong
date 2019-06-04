@@ -1,6 +1,8 @@
 # Based on https://www.pyimagesearch.com/2015/12/21/increasing-webcam-fps-with-python-and-opencv/
 from threading import Thread
+
 import cv2
+
 
 class Camera:
 	def __init__(self, src=0, mirror=False):
@@ -33,8 +35,8 @@ class Camera:
 	def read(self):
 		return self.grabbed, self.frame
 
-	def record(self, filename='capture.avi', fourcc='XVID'):
-		self.video = cv2.VideoWriter(filename, cv2.VideoWriter_fourcc(*fourcc), 25, (self.width, self.height))
+	def record(self, filename='cam.avi', fourcc='XVID'):
+		self.video = cv2.VideoWriter(filename, cv2.VideoWriter_fourcc(*fourcc), self.fps, (self.width, self.height))
 
 	def record_stop(self):
 		if self.video:

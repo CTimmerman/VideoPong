@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 """Video Pong by Cees Timmerman
 
-Press C to capture screenshot, V to toggle record,
-Esc to exit, and +/- to adjust ball tolerance.
+H for help, +/- to adjust ball tolerance, C captures image,
+R records, V records with overlay, and Esc exits.
 
 2019-03-25 v0.1 based on https://theailearner.com/2019/03/18/set-camera-timer-using-opencv-python/
 2019-03-26 v0.2 Ball bounces off video changes.
 2019-04-24 v0.3 Mirror by default and PEP 8 a bit.
 2019-04-30 v0.4 Fixed mirror feature, added video recording, more uniform and efficient speed, record indicator.
 2019-05-30 v0.5 Toggle recording, adjust tolerance, tweak FPS, obey window close, support webcam hotswap.
+2019-06-04 v0.6 Tweak FPS, record raw footage, show help on start.
 """
 from __future__ import print_function
 import time
@@ -18,6 +19,7 @@ import numpy as np
 
 from camera import Camera
 from fps import FPS
+
 
 BLACK = (0, 0, 0)
 RED = (0, 0, 255)
@@ -53,7 +55,7 @@ x = w//2 - r//2
 y = h//2 - r//2
 dx = dy = w // fps.limit // 2  # Ball crosses screen in about 2 seconds.
 
-tolerance = 20
+tolerance = 34  # Bounce at this amount of color change.
 window_title = 'Video Pong'
 countdown = old_frame_count = 0
 img = new_img = diff = video = None
@@ -67,8 +69,6 @@ while True:
 		#cv2.imshow('BG', fg1)
 		#cv2.BackgroundSubtractor.apply(img)
 	else:
-		#print("Can't get image.")
-		#cap.stop()
 		img = new_img = np.zeros((480, 640, 3), np.uint8)
 	
 	fps.update()
@@ -101,40 +101,54 @@ while True:
 	
 	# Handle user input for 1 ms.
 	k = cv2.waitKey(1) # Add & 0xFF for 64-bit Windows perhaps.
-	if k == ord('+'):
-		tolerance += 1
-		caption(["Tolerance: %s" % tolerance], 1)
-	elif k == ord('-'):
-		tolerance -= 1
-		caption(["Tolerance: %s" % tolerance], 1)
-	elif k == ord('c'):  # capture
-		countdown = int(3 * fps.fps())
-	elif k == ord('e'):  # capture
-		caption([fps.elapsed()])
-	elif k == ord('h'):  # help
-		for i, line in enumerate(__doc__.splitlines()):
-			caption([line, 2, 55+i*14], 5)
-	elif k == ord('v'):  # video
-		if video:
-			video.release()
-			video = None
-		else:
-			path = 'cam' + time.strftime("%Y-%m-%d %H.%M.%S") + '.avi'
-			caption(["Recording to %s @ %s FPS." % (path, fps.limit)])
-			#cap.record(path)  # Lacks our overlay.
-			video = cv2.VideoWriter(path, cv2.VideoWriter_fourcc(*'XVID'), fps.limit, (w, h))
-	elif k == 27:  # Esc
+	if old_img is None:
+		k = ord('h')
+	elif cv2.getWindowProperty(window_title, 0) < 0:  # window closed
 		break
-	elif old_img is not None and cv2.getWindowProperty(window_title, 0) < 0:
-		break
+	
+	if k >= 0:
+		k = chr(k).lower()
+		if k == '+':
+			tolerance += 1
+			caption(["Tolerance: %s" % tolerance], 1)
+		elif k == '-':
+			tolerance -= 1
+			caption(["Tolerance: %s" % tolerance], 1)
+		elif k == 'c':  # capture
+			countdown = int(3 * fps.fps())
+		elif k == 'e':
+			caption([fps.elapsed()])
+		elif k == 'h':  # help
+			for i, line in enumerate(__doc__.splitlines()):
+				caption([line, 2, 55+i*14], 5)
+		elif k == 'r':  # record raw video
+			if cap.video:
+				cap.record_stop()
+			else:
+				path = 'cam_' + time.strftime("%Y-%m-%d_%H.%M.%S") + '.avi'
+				caption(["Recording to %s @ %s FPS" % (path, cap.fps)])
+				cap.record(path)
+		elif k == 'v':  # video
+			if video:
+				video.release()
+				video = None
+			else:
+				path = 'cap_' + time.strftime("%Y-%m-%d_%H.%M.%S") + '.avi'
+				caption(["Recording to %s @ %s FPS" % (path, fps.limit)])
+				#cap.record(path)  # Lacks our overlay.
+				video = cv2.VideoWriter(path, cv2.VideoWriter_fourcc(*'XVID'), fps.limit, (w, h))
+		elif k == chr(27):  # Esc
+			break
 	
 	# Render text.
 	for i, arr in enumerate(captions.copy()):
 		arr[0] -= 1
 		if arr[0] <= 0: captions.remove(arr)
 		write(img, *arr[1:])
+	if cap.video:
+		write(img, ".", x=int(w-40), y=30, color=RED, thickness=6, size=4)  # "•" would require pillow module.
 	if video:
-		write(img, "R", x=w-60, y=60, color=RED, thickness=4, size=2)  # "•" would require pillow module.
+		write(img, ".", x=w-60, y=30, color=WHITE, thickness=6, size=4)  # "•" would require pillow module.
 	
 	# Show frame.
 	cv2.imshow(window_title, img)
