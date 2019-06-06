@@ -4,6 +4,7 @@ from time import sleep
 
 import cv2
 
+
 class Camera:
 	def __init__(self, src=0, mirror=False):
 		self.mirror = mirror
@@ -65,7 +66,7 @@ class Camera:
 	def read(self):
 		return self.grabbed, self.frame
 
-	def record(self, filename='capture.avi', fourcc='XVID'):
+	def record(self, filename='cam.avi', fourcc='XVID'):
 		self.video = cv2.VideoWriter(filename, cv2.VideoWriter_fourcc(*fourcc), self.fps, (self.width, self.height))
 
 	def record_stop(self):
