@@ -29,9 +29,9 @@ def random_color():
 	from random import randint as rnd
 	return (rnd(0, 255), rnd(0, 255), rnd(0, 255))
 
-def write(img, msg, x=2, y=13, size=0.5, color=WHITE, thickness=1, window_title=''):
+def write(img, msg, x=2, y=13, size=0.5, thickness=1, color=WHITE, window_title=''):
 	font = cv2.FONT_HERSHEY_SIMPLEX
-	cv2.putText(img, str(msg), (x+thickness, y+thickness), font, size, BLACK, thickness, cv2.LINE_AA)  # Drop shadow for contrast.
+	cv2.putText(img, str(msg), (x+1, y+1), font, size, BLACK, thickness, cv2.LINE_AA)  # Drop shadow for contrast.
 	cv2.putText(img, str(msg), (x, y), font, size, color, thickness, cv2.LINE_AA)
 	if window_title: cv2.imshow(window_title, img)
 
@@ -97,7 +97,7 @@ while True:
 				msg = "Saved image to %s" % path
 			caption([msg, 20, 80, 0.6])
 		else:
-			write(img, str(int(countdown//fps.fps()) + 1), 250, 250, 7, thickness=3)
+			write(img, str(int(countdown//fps.fps()) + 1), 250, 250, 7, 3)
 	
 	# Handle user input for 1 ms.
 	k = cv2.waitKey(1) # Add & 0xFF for 64-bit Windows perhaps.
@@ -145,10 +145,10 @@ while True:
 		arr[0] -= 1
 		if arr[0] <= 0: captions.remove(arr)
 		write(img, *arr[1:])
-	if cap.video:
-		write(img, ".", x=int(w-40), y=30, color=RED, thickness=6, size=4)  # "•" would require pillow module.
-	if video:
-		write(img, ".", x=w-60, y=30, color=WHITE, thickness=6, size=4)  # "•" would require pillow module.
+	
+	# Recording indicator. "•" would require pillow module.
+	if cap.video: write(img, ".", w-40, 30, 4, 6, RED)
+	if video: write(img, ".", w-60, 30, 4, 6, WHITE)
 	
 	# Show frame.
 	cv2.imshow(window_title, img)
